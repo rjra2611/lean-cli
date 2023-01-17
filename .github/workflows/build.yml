@@ -85,25 +85,23 @@ jobs:
 
       - name: Setup Portable
         run: pip install pyinstaller lean==${GITHUB_REF##*/}
+        shell: bash
 
       - name: Create Portable
+        run: |
+          mkdir portable
+          cd portable
+          pyinstaller ../scripts/main.spec
+        shell: bash
+
+      - name: Zip package
         if: matrix.os == 'windows-latest'
-        run: |
-          del /s /f portable
-          mkdir portable
-          cd portable
-          pyinstaller ../scripts/main.spec
-          7z a -tzip dist/lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip dist/lean
-        shell: cmd
+        run: 7z a -tzip portable/dist/lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip portable/dist/lean
+        shell: bash
 
-      - name: Create Portable
+      - name: Zip package
         if: matrix.os == 'macos-12' || matrix.os == 'ubuntu-22.04'
-        run: |
-          rm -rf portable
-          mkdir portable
-          cd portable
-          pyinstaller ../scripts/main.spec
-          zip -r dist/lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip dist/lean
+        run: zip -r portable/dist/lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip portable/dist/lean
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -114,16 +112,10 @@ jobs:
 
       - name: Publish To S3
         run:
-          aws s3 cp dist/lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/${{ matrix.os }}/ --content-type "application/zip"
+          aws s3 cp portable/dist/lean.${GITHUB_REF##*/}.${{ matrix.os }}.zip s3://${{ secrets.AWS_BUCKET }}/${{ matrix.os }}/ --content-type "application/zip"
+        shell: bash
 
       - name: Cleanup
-        if: matrix.os == 'windows-latest'
         run: |
-          cd ..
-          del /s /f portable
-      
-      - name: Cleanup
-        if: matrix.os == 'macos-12' || matrix.os == 'ubuntu-22.04'
-        run: |
-          cd ..
           rm -rf portable
+        shell: bash
