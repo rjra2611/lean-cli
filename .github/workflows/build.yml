@@ -40,12 +40,21 @@ jobs:
           pyinstaller ../scripts/main.spec
         shell: bash
 
+      - name: Get OS name
+        run: |
+          os_name=$(echo ${{ matrix.os }} | sed 's/-latest//')
+          echo "The OS name is ${os_name}"
+
       - name: Get OS Name
-        run: export os_name=matrix.os.os
+        run: | 
+          export os_name=matrix.os.os
+          echo "REPOSITORY_NAME=$(echo ${{ matrix.os }} | sed 's/-latest//')" >> $GITHUB_ENV
         shell: bash
 
       - name: Debug
-        run: echo ${os_name} ${{matrix.os.os}}
+        run: | 
+          echo ${{env.os_name}} ${{matrix.os.os}}
+          echo ${{env.REPOSITORY_NAME}}
 
       - name: Zip package Windows
         if: matrix.os == 'windows-latest'
