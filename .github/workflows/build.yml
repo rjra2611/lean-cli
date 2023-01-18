@@ -41,8 +41,11 @@ jobs:
         shell: bash
 
       - name: Get OS Name
-        run: export os_name=matrix.os.split("-")[0]
+        run: export os_name=matrix.os.os
         shell: bash
+
+      - name: Debug
+        run: echo ${os_name} ${{matrix.os.os}}
 
       - name: Zip package Windows
         if: matrix.os == 'windows-latest'
