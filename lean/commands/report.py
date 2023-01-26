@@ -76,6 +76,10 @@ def _find_project_directory(backtest_file: Path) -> Optional[Path]:
               is_flag=True,
               default=False,
               help="Pull the LEAN engine image before running the report creator")
+@option("--pdf",
+            is_flag=True,
+            default=False,
+            help="Generate a PDF report instead of an HTML report")
 def report(backtest_results: Optional[Path],
            live_results: Optional[Path],
            report_destination: Path,
@@ -85,7 +89,8 @@ def report(backtest_results: Optional[Path],
            strategy_description: Optional[str],
            overwrite: bool,
            image: Optional[str],
-           update: bool) -> None:
+           update: bool,
+           pdf: bool) -> None:
     """Generate a report of a backtest.
 
     This runs the LEAN Report Creator in Docker to generate a polished, professional-grade report of a backtest.
@@ -104,6 +109,9 @@ def report(backtest_results: Optional[Path],
     """
     from json import dump
     from docker.types import Mount
+
+    if detach and pdf:
+        raise RuntimeError("--detach and --pdf cannot be used together")
 
     if report_destination.exists() and not overwrite:
         raise RuntimeError(f"{report_destination} already exists, use --overwrite to overwrite it")
@@ -249,4 +257,9 @@ def report(backtest_results: Optional[Path],
         logger.info("You can use Docker's own commands to manage the detached container")
         return
 
+    if pdf:
+        import pdfkit
+        pdf_destination = report_destination.parent / (report_destination.stem + ".pdf")
+        pdfkit.from_file(report_destination, pdf_destination)
+        report_destination = pdf_destination
     logger.info(f"Successfully generated report to '{report_destination}'")
